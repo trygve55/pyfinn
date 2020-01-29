@@ -11,7 +11,7 @@ Requests to finn.no uses a randomized user agent. The response data is cached (w
     cd pyfinn
     python3 -m venv .
     source bin/activate
-    pip3 install fake-useragent regex requests-html simplejson dataparser
+    pip3 install fake-useragent regex requests-html simplejson dateparser
 
 ## Usage
     python3 finn.py <Finn-code>
