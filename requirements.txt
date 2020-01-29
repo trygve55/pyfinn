@@ -1,0 +1,4 @@
+fake-useragent==0.1.11
+regex==2020.1.8
+requests-html==0.10.0
+simplejson==3.13.2
