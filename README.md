@@ -13,6 +13,8 @@ Requests to finn.no uses a randomized user agent. The response data is cached (w
     cd pyfinn
     pip3 install requirements.txt
 
+## Usage
+    python3 finn.py <Finn-code>
 
 ## Terms of use
 From finn.no footer (norwegian):
