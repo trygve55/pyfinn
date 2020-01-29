@@ -8,10 +8,10 @@ Requests to finn.no uses a randomized user agent. The response data is cached (w
 ## Installation
 
     git clone https://github.com/trygve55/pyfinn
-    python3 -m venv pyfinn
-    source pyfinn/bin/activate
     cd pyfinn
-    pip3 install requirements.txt
+    python3 -m venv .
+    source bin/activate
+    pip3 install fake-useragent regex requests-html simplejson
 
 ## Usage
     python3 finn.py <Finn-code>
