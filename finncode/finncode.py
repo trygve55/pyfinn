@@ -22,22 +22,11 @@ def error_check(code_list):
 
 
 def _parse_data_lists(html:HTMLSession):
-    data = {}
-    skip_keys = ['Mobil', 'Fax']  # Unhandled data list labels
-    finn_codes = {}
+    finn_codes = []
     data_lists = html.find('article')
     for el in data_lists:
         finn_codes.append(el.find('a')[0].attrs["id"].split("-")[-1])
-        '''
-        values_list = iter(el.find('dt, dd'))
-        for a in values_list:
-            _key = a.text
-            a = next(values_list)
-            if _key in skip_keys:
-                continue'''
-    #if(error_check(values_list)):
-    #    return {}
-    return data
+    return finn_codes
 
 
 
@@ -62,19 +51,22 @@ def _scrape_viewings(html):
 
 
 def scrape_category(search_URL:str):
-    url = search_URL
+    page = 1
+    finn_codes = []
     while True:
+        url = search_URL + "&page=" + str(page)
+        page += 1
         r = session.get(url, headers={'user-agent': ua.random})
         r.raise_for_status()
         html = r.html
-        finn_codes = _parse_data_lists(html)
-    return finn_codes
+        temp_codes = _parse_data_lists(html)
+        if len(temp_codes) <= 1:
+            break
+        finn_codes.extend(temp_codes)
+    return list(set(finn_codes))
 
 
-def search_URL_to_codes(search_URL):
-    data = {}
-    data.append(_parse_data_lists)
-    while length(_parse_data_lists)
+
 
 if __name__ == '__main__':
     '''
@@ -85,5 +77,4 @@ if __name__ == '__main__':
     ad_url = sys.argv[1]
     ad = scrape_category(ad_url)
     print(json.dumps(ad, indent=2, ensure_ascii=False))'''
-    scrape_category("https://www.finn.no/realestate/homes/search.html?location=0.20016&location=1.20016.20318")
-
+    print(len(scrape_category("https://www.finn.no/realestate/homes/search.html?location=0.20016&location=1.20016.20318")))
