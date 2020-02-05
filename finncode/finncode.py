@@ -29,27 +29,6 @@ def _parse_data_lists(html:HTMLSession):
     return finn_codes
 
 
-
-
-'''
-def _scrape_viewings(html):
-    viewings = set()
-    els = html.find('time')
-    for el in els:
-        # Ninja parse dt range string in norwegian locale. Example: "søndag 08. april, kl. 13:00–14:00"
-        split_space = el.text.strip().split(' ')
-        if len(split_space) < 5:
-            continue
-        date, time_range = ' '.join(split_space[1:]).replace(' kl. ', '').split(',')
-        # start_hour, start_min = time_range.split('–')[0].split(':')
-        dt = dateparser.parse(date, languages=['nb'])
-        if dt:
-            # dt = dt.replace(hour=int(start_hour), minute=int(start_min))
-            viewings.add(dt.date().isoformat())
-    return list(viewings)
-'''
-
-
 def scrape_category(search_URL:str):
     page = 1
     finn_codes = []
@@ -69,12 +48,4 @@ def scrape_category(search_URL:str):
 
 
 if __name__ == '__main__':
-    '''
-    if len(sys.argv) != 2:
-        print('Invalid number of arguments.\n\nUsage:\n$ python finn.py FINNKODE')
-        exit(1)
-
-    ad_url = sys.argv[1]
-    ad = scrape_category(ad_url)
-    print(json.dumps(ad, indent=2, ensure_ascii=False))'''
     print(len(scrape_category("https://www.finn.no/realestate/homes/search.html?location=0.20016&location=1.20016.20318")))
