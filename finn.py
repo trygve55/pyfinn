@@ -5,10 +5,13 @@ import sys
 import dateparser
 from fake_useragent import UserAgent
 from requests_html import HTMLSession
+from geopy.geocoders import Nominatim
 
 
 session = HTMLSession()
 ua = UserAgent()
+
+geolocator = Nominatim(user_agent="finnpy")
 
 keywords = ['utsikt',
             'parkering',
@@ -24,6 +27,13 @@ def _clean(text):
     return text
 
 
+def _parse_neighbourhood_info(html):
+    html.render()
+    for el in html.find('div'):
+        if 'class' in el.attrs and 'nabolag-widget' in el.attrs['class']:
+            print(el)
+
+
 def _parse_keywords(html):
     found_keywords = []
     for el in html.find('div'):
@@ -34,6 +44,7 @@ def _parse_keywords(html):
                     found_keywords.append(i)
 
     return found_keywords
+
 
 def _parse_data_lists(html):
     data = {}
@@ -51,6 +62,20 @@ def _parse_data_lists(html):
 
     return data
 
+def _get_geocode(address):
+    new_address = address.split(',')
+    new_new_address = ""
+    for s in new_address[0].split():
+        new_new_address += s
+        if s.isdigit():
+            break
+        new_new_address += " "
+
+    if len(new_address) == 2:
+        new_address = new_new_address + "," + new_address[1]
+
+    location = geolocator.geocode(new_address)
+    return location
 
 def _scrape_viewings(html):
     viewings = set()
@@ -99,6 +124,8 @@ def scrape_ad(finnkode):
 
     ad_data.update(_parse_data_lists(html))
     print(_parse_keywords(html))
+    #print(_parse_neighbourhood_info(html))
+    _get_geocode(ad_data['Postadresse'])
 
     ad_data['Prisantydning'] = _calc_price(ad_data)
 
