@@ -7,16 +7,29 @@ from fake_useragent import UserAgent
 from requests_html import HTMLSession
 from geopy.geocoders import Nominatim
 from geopy import distance
-import geocoder
 
 session = HTMLSession()
 ua = UserAgent()
 
 geolocator = Nominatim(user_agent="finnpy")
 
-keywords = ['utsikt',
-            'parkering',
-            'garasje']
+keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen', 'garasje', 'parkeringsplass', 'p-plass'],
+    ['fiber', 'fibernett', 'fibertilkobling', 'fiber-nett', 'fiber nett', 'fiber-tilkobling', 'fiber tilkobling'],
+    ['kabel-tv', 'kabeltv', 'kabel tv'],
+    ['tg 0', 'tg0', 'tilstandsgrad 0', 'tg: 0', 'tg:0'],
+    ['tg 1', 'tg1', 'tilstandsgrad 1', 'tg: 1', 'tg:1'],
+    ['tg 2', 'tg2', 'tilstandsgrad 2', 'tg: 2', 'tg:2'],
+    ['vedovn', 'peis', 'vedfyring', 'ved ovn', 'ved fyring'],
+    ['varmepumpe', 'varme pumpe', 'varme-pumpe', 'air-condition', 'air condition'],
+    ['fjernvarme', 'fjern varme', 'fjern-varme', 'jord-varme', 'jordvarme', 'jord varme', 'grunnvarme', 'grunn varme', 'grunn-varme'],
+    ['terasse', 'terrasse', 'balkong', 'veranda', 'takterasse', 'takterrasse', 'markterrasse', 'markterasse'],
+    ['utsikt', 'panoramautsikt', 'sjøutsikt', 'havutsikt', 'fjordutsikt'],
+    ['kjøkkenøy', 'integrert hvitevarer', 'integrert kjøkken', 'hth', 'kvik'],
+    ['hage', 'plen'],
+    ['garderobe', 'walk-in', 'walk in', 'walkin'],
+    ['oppusset', 'renovert', 'totalrenovert', 'moderne'],
+    ['oppussingsobjekt', 'oppussingsprosjekt', 'oppussings prosjekt', 'oppussingsobjekt'],
+    ['bod', 'utebod', 'utehus', 'skur', 'vedskjul']]
 
 
 def _clean(text):
@@ -37,15 +50,17 @@ def _parse_neighbourhood_info(html):
 
 
 def _parse_keywords(html):
-    found_keywords = []
+    data = {}
     for el in html.find('div'):
         if 'data-owner' in el.attrs and el.attrs['data-owner'] == 'adView':
             text = el.text
-            for i in keywords:
-                if i in text:
-                    found_keywords.append(i)
-
-    return found_keywords
+            for words in keywords:
+                data[words[0]] = False
+                for i in words:
+                    if i in text:
+                        data[words[0]] = True
+                        break
+    return data
 
 
 def _parse_data_lists(html):
@@ -144,7 +159,7 @@ def scrape_ad(finnkode):
 
     ad_data.update(_parse_data_lists(html))
     ad_data.update(_parse_geodata(ad_data['Postadresse']))
-    print(_parse_keywords(html))
+    ad_data.update(_parse_keywords(html))
     #print(_parse_neighbourhood_info(html))
 
     ad_data['Prisantydning'] = _calc_price(ad_data)
