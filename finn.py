@@ -10,6 +10,9 @@ from requests_html import HTMLSession
 session = HTMLSession()
 ua = UserAgent()
 
+keywords = ['utsikt',
+            'parkering',
+            'garasje']
 
 def _clean(text):
     text = text.replace('\xa0', ' ').replace(',-', '').replace(' m²', '')
@@ -20,6 +23,17 @@ def _clean(text):
 
     return text
 
+
+def _parse_keywords(html):
+    found_keywords = []
+    for el in html.find('div'):
+        if 'data-owner' in el.attrs and el.attrs['data-owner'] == 'adView':
+            text = el.text
+            for i in keywords:
+                if i in text:
+                    found_keywords.append(i)
+
+    return found_keywords
 
 def _parse_data_lists(html):
     data = {}
@@ -84,6 +98,7 @@ def scrape_ad(finnkode):
         ad_data.update({'Visningsdato {}'.format(i): v for i, v in enumerate(viewings, start=1)})
 
     ad_data.update(_parse_data_lists(html))
+    print(_parse_keywords(html))
 
     ad_data['Prisantydning'] = _calc_price(ad_data)
 
