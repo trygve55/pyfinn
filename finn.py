@@ -6,7 +6,8 @@ import dateparser
 from fake_useragent import UserAgent
 from requests_html import HTMLSession
 from geopy.geocoders import Nominatim
-
+from geopy import distance
+import geocoder
 
 session = HTMLSession()
 ua = UserAgent()
@@ -16,6 +17,7 @@ geolocator = Nominatim(user_agent="finnpy")
 keywords = ['utsikt',
             'parkering',
             'garasje']
+
 
 def _clean(text):
     text = text.replace('\xa0', ' ').replace(',-', '').replace(' m²', '')
@@ -55,12 +57,19 @@ def _parse_data_lists(html):
         values_list = iter(el.find('dt, dd'))
         for a in values_list:
             _key = a.text
+
             a = next(values_list)
             if _key in skip_keys:
                 continue
-            data[_key] = _clean(a.text)
+            #Cleanup tomteareal
+            if _key == 'Tomteareal':
+                _key = 'Tomteareal (eiet)'
+                data[_key] = int(_clean(a.text).split()[0])
+            else:
+                data[_key] = _clean(a.text)
 
     return data
+
 
 def _get_geocode(address):
     new_address = address.split(',')
@@ -76,6 +85,22 @@ def _get_geocode(address):
 
     location = geolocator.geocode(new_address)
     return location
+
+
+def _get_distance_to_city_center(location):
+    location2 = (63.4304324, 10.3946152) #Trondheim
+    return distance.geodesic((location.latitude, location.longitude), location2).km
+
+
+def _parse_geodata(address):
+    data = {}
+    location = _get_geocode(address)
+    data['latitude'] = location.latitude
+    data['longitude'] = location.longitude
+    data['distance_to_centrum'] = _get_distance_to_city_center(location)
+
+    return data
+
 
 def _scrape_viewings(html):
     viewings = set()
@@ -117,15 +142,10 @@ def scrape_ad(finnkode):
         'url': url,
     }
 
-    viewings = _scrape_viewings(html)
-    if viewings:
-        ad_data['Visningsdatoer'] = viewings
-        ad_data.update({'Visningsdato {}'.format(i): v for i, v in enumerate(viewings, start=1)})
-
     ad_data.update(_parse_data_lists(html))
+    ad_data.update(_parse_geodata(ad_data['Postadresse']))
     print(_parse_keywords(html))
     #print(_parse_neighbourhood_info(html))
-    _get_geocode(ad_data['Postadresse'])
 
     ad_data['Prisantydning'] = _calc_price(ad_data)
 
