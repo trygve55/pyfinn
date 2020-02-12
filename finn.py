@@ -188,7 +188,22 @@ def _data_filler(ad_data):
     if 'Omkostninger' not in ad_data:
         ad_data['Omkostninger'] = 0
 
-    return ad_data
+    ad_data['Energikarakter'] = 0
+    ad_data['Oppvarmingskarakter'] = 0
+
+    letters_list = ['a','b','c','d','e','f','g']
+    colors_list =['mørkegrønn','lysegrønn','gul','oransje','rød']
+
+    new_energy = ad_data['Energimerking'].split('-')
+    energy_rating = new_energy[0].strip()
+    ad_data['Energikarakter'] = letters_list.index(energy_rating.lower())
+    if len(new_energy) == 2:
+        heating_rating = new_energy[1].strip()
+        ad_data['Oppvarmingskarakter'] = colors_list.index(heating_rating.lower())
+    else:
+        ad_data['Oppvarmingskarakter'] = 4
+
+        return ad_data
 
 
 def _data_cleaner(ad_data):
@@ -199,7 +214,6 @@ def _data_cleaner(ad_data):
             del ad_data[col]
 
     return ad_data
-
 
 def scrape_ad(finnkode):
     url = 'https://www.finn.no/realestate/homes/ad.html?finnkode={code}'.format(code=finnkode)
