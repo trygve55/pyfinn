@@ -13,7 +13,7 @@ ua = UserAgent()
 
 geolocator = Nominatim(user_agent="finnpy")
 
-keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen', 'garasje', 'parkeringsplass', 'p-plass'],
+keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen', 'garasje', 'parkeringsplass', 'p-plass','car port','kar port'],
     ['fiber', 'fibernett', 'fibertilkobling', 'fiber-nett', 'fiber nett', 'fiber-tilkobling', 'fiber tilkobling'],
     ['kabel-tv', 'kabeltv', 'kabel tv'],
     ['tg 0', 'tg0', 'tilstandsgrad 0', 'tg: 0', 'tg:0'],
@@ -27,7 +27,7 @@ keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen
     ['kjøkkenøy', 'integrert hvitevarer', 'integrert kjøkken', 'hth', 'kvik'],
     ['hage', 'plen'],
     ['garderobe', 'walk-in', 'walk in', 'walkin'],
-    ['oppusset', 'renovert', 'totalrenovert', 'moderne'],
+    ['oppusset', 'renovert', 'totalrenovert', 'moderne', 'total-renovert'],
     ['oppussingsobjekt', 'oppussingsprosjekt', 'oppussings prosjekt', 'oppussingsobjekt'],
     ['bod', 'utebod', 'utehus', 'skur', 'vedskjul']]
 
@@ -53,7 +53,7 @@ def _parse_keywords(html):
     data = {}
     for el in html.find('div'):
         if 'data-owner' in el.attrs and el.attrs['data-owner'] == 'adView':
-            text = el.text
+            text = el.text.lower()
             for words in keywords:
                 data[words[0]] = False
                 for i in words:
@@ -72,7 +72,6 @@ def _parse_data_lists(html):
         values_list = iter(el.find('dt, dd'))
         for a in values_list:
             _key = a.text
-
             a = next(values_list)
             if _key in skip_keys:
                 continue
@@ -139,6 +138,16 @@ def _calc_price(ad_data):
     cost = ad_data.get('Omkostninger', 0)
     return ad_data['Totalpris'] - debt - cost
 
+def _str2num_fees(ad_data):
+    fees = ad_data.get('Kommunale avg.', 0)
+    print(fees)
+    new_fees = ""
+    for f in fees.split():
+        if f.isdigit():
+            new_fees += f
+    new_fees = int(new_fees)
+    return new_fees
+
 
 def scrape_ad(finnkode):
     url = 'https://www.finn.no/realestate/homes/ad.html?finnkode={code}'.format(code=finnkode)
@@ -163,6 +172,7 @@ def scrape_ad(finnkode):
     #print(_parse_neighbourhood_info(html))
 
     #ad_data['Prisantydning'] = _calc_price(ad_data)
+    ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
 
     return ad_data
 
