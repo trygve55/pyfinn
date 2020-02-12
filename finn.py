@@ -138,15 +138,67 @@ def _calc_price(ad_data):
     cost = ad_data.get('Omkostninger', 0)
     return ad_data['Totalpris'] - debt - cost
 
-def _str2num_fees(ad_data):
-    fees = ad_data.get('Kommunale avg.', 0)
-    print(fees)
-    new_fees = ""
-    for f in fees.split():
+
+def _str2num(text):
+    new_text = ""
+    for f in text.split():
         if f.isdigit():
-            new_fees += f
-    new_fees = int(new_fees)
+            new_text += f
+    new_fees = int(new_text)
     return new_fees
+
+
+def _data_filler(ad_data):
+    if 'Totalpris' not in ad_data and 'Verditakst' in ad_data:
+        ad_data['Totalpris'] = ad_data['Verditakst']
+
+    if 'Primærrom' not in ad_data and 'Bruksareal' in ad_data:
+        ad_data['Primærrom'] = ad_data['Bruksareal']
+
+    if 'Pris med fellesgjeld' in ad_data:
+        ad_data['Totalpris'] = ad_data['Pris med fellesgjeld']
+        del ad_data['Pris med fellesgjeld']
+
+    if not 'Felleskost/mnd.' in ad_data:
+        ad_data['Felleskost/mnd.'] = 0
+
+    if not 'Kommunale avg.' in ad_data:
+        ad_data['Kommunale avg.'] = 0
+    else:
+        ad_data['Kommunale avg.'] = _str2num(ad_data['Kommunale avg.'])
+
+    if 'Byggeår' not in ad_data:
+        ad_data['Byggeår'] = 2022
+
+    if 'Etasje' not in ad_data:
+        ad_data['Etasje'] = 1.0
+
+    if 'Rom' not in ad_data:
+        ad_data['Rom'] = ad_data['Soverom'] + 1
+
+    if 'Energimerking' not in ad_data:
+        ad_data['Energimerking'] = 'F - rød'
+
+    if 'Fellesgjeld' not in ad_data:
+        ad_data['Fellesgjeld'] = 0
+
+    if 'Fellesformue' not in ad_data:
+        ad_data['Fellesformue'] = 0
+
+    if 'Omkostninger' not in ad_data:
+        ad_data['Omkostninger'] = 0
+
+    return ad_data
+
+
+def _data_cleaner(ad_data):
+    remove = ['Tomteareal (eiet)', 'Bruttoareal', 'Formuesverdi', 'Verditakst', 'Tomt', 'Utleiedel']
+
+    for col in remove:
+        if col in ad_data:
+            del ad_data[col]
+
+    return ad_data
 
 
 def scrape_ad(finnkode):
@@ -166,7 +218,14 @@ def scrape_ad(finnkode):
         'url': url,
     }
 
-    #print(html.attrs)
+    '''
+    for el in html.find('span'):
+        if 'class' in el.attrs and el.attrs['class'][0] == 'u-t3':
+            if not el.text.split(' ')[0].isdigit():
+                continue
+            print(el.text)
+            print(_str2num(el.text))
+    '''
 
     ad_data.update(_parse_data_lists(html))
     #ad_data.update(_parse_geodata(ad_data['Postadresse']))
@@ -178,14 +237,8 @@ def scrape_ad(finnkode):
 
     #ad_data['Prisantydning'] = _calc_price(ad_data)
 
-    if not 'Felleskost/mnd.' in ad_data:
-        ad_data['Felleskost/mnd.'] = 0
-
-    if not 'Kommunale avg.' in ad_data:
-        ad_data['Kommunale avg.'] = 0
-    else:
-        ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
-
+    ad_data = _data_filler(ad_data)
+    ad_data = _data_cleaner(ad_data)
 
     return ad_data
 

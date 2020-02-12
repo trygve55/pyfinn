@@ -10,6 +10,6 @@ if __name__ == '__main__':
         ads.append(finn.scrape_ad(code))
 
     df = pd.DataFrame(ads)
-    df.to_csv(r'test.csv')
+    df.to_csv(r'test.csv', index=False)
 
     print("Saved CSV file to test.csv")
