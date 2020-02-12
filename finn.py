@@ -172,8 +172,11 @@ def scrape_ad(finnkode):
     #print(_parse_neighbourhood_info(html))
 
     ad_data['Prisantydning'] = _calc_price(ad_data)
-    ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
-
+    
+    try: 
+        ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
+    except:
+        print(0) 
     return ad_data
 
 
