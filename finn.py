@@ -158,11 +158,11 @@ def scrape_ad(finnkode):
     }
 
     ad_data.update(_parse_data_lists(html))
-    ad_data.update(_parse_geodata(ad_data['Postadresse']))
+    #ad_data.update(_parse_geodata(ad_data['Postadresse']))
     ad_data.update(_parse_keywords(html))
     #print(_parse_neighbourhood_info(html))
 
-    ad_data['Prisantydning'] = _calc_price(ad_data)
+    #ad_data['Prisantydning'] = _calc_price(ad_data)
 
     return ad_data
 
