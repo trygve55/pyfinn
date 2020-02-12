@@ -27,7 +27,7 @@ keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen
     ['kjøkkenøy', 'integrert hvitevarer', 'integrert kjøkken', 'hth', 'kvik'],
     ['hage', 'plen'],
     ['garderobe', 'walk-in', 'walk in', 'walkin'],
-    ['oppusset', 'renovert', 'totalrenovert', 'moderne', 'total-renovert'],
+    ['oppusset', 'renovert', 'totalrenovert', 'moderne', 'total-renovert','oppgradert'],
     ['oppussingsobjekt', 'oppussingsprosjekt', 'oppussings prosjekt', 'oppussingsobjekt'],
     ['bod', 'utebod', 'utehus', 'skur', 'vedskjul']]
 
@@ -166,17 +166,25 @@ def scrape_ad(finnkode):
         'url': url,
     }
 
+    #print(html.attrs)
+
     ad_data.update(_parse_data_lists(html))
-    ad_data.update(_parse_geodata(ad_data['Postadresse']))
+    #ad_data.update(_parse_geodata(ad_data['Postadresse']))
     ad_data.update(_parse_keywords(html))
     #print(_parse_neighbourhood_info(html))
 
-    ad_data['Prisantydning'] = _calc_price(ad_data)
-    
-    try: 
+    #if 'Prisantydning' in ad_data:
+    #    ad_data['Totalpris'] = ad_data['Prisantydning']
+
+    #ad_data['Prisantydning'] = _calc_price(ad_data)
+
+    if not 'Felleskost/mnd.' in ad_data:
+        ad_data['Felleskost/mnd.'] = 0
         ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
-    except:
-        print(0) 
+
+    if not 'Kommunale avg.' in ad_data:
+        ad_data['Kommunale avg.'] = 0
+
     return ad_data
 
 
