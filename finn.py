@@ -184,6 +184,10 @@ def scrape_ad(finnkode):
 
     if not 'Kommunale avg.' in ad_data:
         ad_data['Kommunale avg.'] = 0
+    
+    if 'Felleskost/mnd.' and 'Kommunale avg.' in ad_data:
+        ad_data['Kommunale avg.'] = _str2num_fees(ad_data)
+
 
     return ad_data
 
