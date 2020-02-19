@@ -201,7 +201,7 @@ def _interpolate_data_(ad_data):
     else:
         ad_data['Oppvarmingskarakter'] = 4
 
-        return ad_data
+    return ad_data
 
 
 def _data_cleaner(ad_data):
