@@ -7,6 +7,7 @@ from fake_useragent import UserAgent
 from requests_html import HTMLSession
 from geopy.geocoders import Nominatim
 from geopy import distance
+import eiendomspriser
 
 session = HTMLSession()
 ua = UserAgent()
@@ -148,7 +149,7 @@ def _str2num(text):
     return new_fees
 
 
-def _data_filler(ad_data):
+def _interpolate_data_(ad_data):
     if 'Totalpris' not in ad_data and 'Verditakst' in ad_data:
         ad_data['Totalpris'] = ad_data['Verditakst']
 
@@ -167,13 +168,10 @@ def _data_filler(ad_data):
     else:
         ad_data['Kommunale avg.'] = _str2num(ad_data['Kommunale avg.'])
 
-    if 'Byggeår' not in ad_data:
-        ad_data['Byggeår'] = 2022
-
     if 'Etasje' not in ad_data:
         ad_data['Etasje'] = 1.0
 
-    if 'Rom' not in ad_data:
+    if 'Soverom' in ad_data and isinstance(ad_data['Soverom'], int) and 'Rom' not in ad_data:
         ad_data['Rom'] = ad_data['Soverom'] + 1
 
     if 'Energimerking' not in ad_data:
@@ -192,7 +190,7 @@ def _data_filler(ad_data):
 
 
 def _data_cleaner(ad_data):
-    remove = ['Tomteareal (eiet)', 'Bruttoareal', 'Formuesverdi', 'Verditakst', 'Tomt', 'Utleiedel']
+    remove = ['Tomteareal (eiet)', 'Bruttoareal', 'Formuesverdi', 'Verditakst', 'Tomt', 'Utleiedel', 'Renovert år', 'Låneverdi', 'Eierskifte-forsikring']
 
     for col in remove:
         if col in ad_data:
@@ -218,27 +216,18 @@ def scrape_ad(finnkode):
         'url': url,
     }
 
-    '''
-    for el in html.find('span'):
-        if 'class' in el.attrs and el.attrs['class'][0] == 'u-t3':
-            if not el.text.split(' ')[0].isdigit():
-                continue
-            print(el.text)
-            print(_str2num(el.text))
-    '''
-
     ad_data.update(_parse_data_lists(html))
-    #ad_data.update(_parse_geodata(ad_data['Postadresse']))
     ad_data.update(_parse_keywords(html))
-    #print(_parse_neighbourhood_info(html))
 
     #if 'Prisantydning' in ad_data:
     #    ad_data['Totalpris'] = ad_data['Prisantydning']
 
     #ad_data['Prisantydning'] = _calc_price(ad_data)
 
-    ad_data = _data_filler(ad_data)
-    ad_data = _data_cleaner(ad_data)
+    sale = eiendomspriser.scrape(ad_data['Postadresse'])
+
+    ad_data['lat'] = sale['Properties'][0]['Coordinate']['Lat']
+    ad_data['lon'] = sale['Properties'][0]['Coordinate']['Lon']
 
     return ad_data
 

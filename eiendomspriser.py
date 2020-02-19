@@ -7,7 +7,7 @@ def encode_url_norwegian(params):
         return urllib.parse.urlencode(params)
 
 
-def scrape_price(address):
+def scrape(address):
     headers = {
         "Host": "siste.eiendomspriser.no",
         "Connection": "keep-alive",
@@ -36,9 +36,7 @@ def scrape_price(address):
     url = "https://siste.eiendomspriser.no/service/search"
     url = url + "?" + encode_url_norwegian(params)
 
-    print(url)
     r = requests.get(url, headers=headers)
-    print(r.json())
 
     return r.json()
 
