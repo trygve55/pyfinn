@@ -8,3 +8,6 @@ lib64
 share
 pyvenv.cfg
 *.csv
+.idea
+koder*.txt
+.~lock*
