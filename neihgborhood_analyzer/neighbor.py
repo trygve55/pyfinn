@@ -148,8 +148,8 @@ One normalized marital status distribrution of property neighborhood
 Formatted as:
 [<Not married>, <Married>, <Separated>, <Widow>]
 """
-def marital_status_distribution(nabolag_html: requests_html.HTML) -> dict:
-    responsive_container = nabolag_html.find(".Legend__LegendValue-e29sxx-3")
+def marital_status_distribution(people_html: requests_html.HTML) -> dict:
+    responsive_container = people_html.find(".Legend__LegendValue-e29sxx-3")
     marital_status = []
     for el in responsive_container:
         marital_status.append(int(str(el.text).split("%")[0])/100)
@@ -342,7 +342,24 @@ def neighborhood_profiler(finn_code: str) -> dict:
     people_html = nabolag_people_html(finn_code)
     transport_html = nabolag_transport_html(finn_code)
 
+    data = {}
 
+    data.update(house_age_distribution(env_html))
+    data.update(housing_price_distribution(env_html))
+    data.update(housing_size(env_html))
+    data.update(polling_env_variables(env_html))
+    data.update(housing_type(env_html))
+    data.update(marital_status_distribution(people_html))
+    data.update(age_distribution(people_html))
+    data.update(income_distribution(people_html))
+
+    data["neighborhood_home_ownership_rate"] = home_ownership_rate(env_html)
+    data["neighborhood_school_quality"] = school_quality(family_html)
+    data["neighborhood_traffic_rating"] = traffic_rating(transport_html)
+    data["neighborhood_public_transport_rating"] = public_transport_rating(transport_html)
+    #data["neighborhood_"] =
+
+    return data
 
 
 #test if run by main.
