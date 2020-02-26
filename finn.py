@@ -240,8 +240,9 @@ def scrape_ad(finnkode):
 
     sale = eiendomspriser.scrape(ad_data['Postadresse'])
 
-    ad_data['lat'] = sale['Properties'][0]['Coordinate']['Lat']
-    ad_data['lon'] = sale['Properties'][0]['Coordinate']['Lon']
+    if (len(sale['Properties']) > 0):
+        ad_data['lat'] = sale['Properties'][0]['Coordinate']['Lat']
+        ad_data['lon'] = sale['Properties'][0]['Coordinate']['Lon']
 
     return ad_data
 
