@@ -1,50 +1,67 @@
 import requests
-import urllib.parse
 import sys
 import json
 
-def encode_url_norwegian(params):
-        return urllib.parse.urlencode(params)
 
-
-def scrape(address):
+def scrape(lat, lon):
     headers = {
-        "Host": "siste.eiendomspriser.no",
-        "Connection": "keep-alive",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "DNT": "1",
-        "X-Requested-With": "XMLHttpRequest",
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36",
-        "Sec-Fetch-Site": "same-origin",
-        "Sec-Fetch-Mode": "cors",
-        "Referer": "https://siste.eiendomspriser.no/?utm_source=www.auraavis.no&utm_campaign=Widget&utm_medium=Overdragelser%20i%20kart&utm_content=Logo",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "nb-NO,nb;q=0.9,no;q=0.8,nn;q=0.7,en-US;q=0.6,en;q=0.5,da;q=0.4",
-        "Cookie": "ASP.NET_SessionId=sqed5hzbx4ltpszdu03hhkco; __uzma=d395d52c-874b-4f1c-854e-f846111093fb; __uzmb=1580308189; 1881_boligpriser_news_v1=true; 1881_boligpriser_tips_v2=true; __uzmc=747534074486; __uzmd=1580986384"
+        'Connection': 'keep-alive',
+        'Content-Length': '0',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
+        'Sec-Fetch-Dest': 'empty',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36',
+        'DNT': '1',
+        'Accept': '*/*',
+        'Origin': 'https://profil.nabolag.no',
+        'Sec-Fetch-Site': 'same-site',
+        'Sec-Fetch-Mode': 'cors',
+        'Referer': 'https://profil.nabolag.no/171527942/sammenlign/2056029/ChIJ-dpIdbAxbUYRGvdYORPSMKs',
+        'Accept-Language': 'nb-NO,nb;q=0.9,no;q=0.8,nn;q=0.7,en-US;q=0.6,en;q=0.5,da;q=0.4'
     }
 
     params = {
-        "query": address,
-        "sort": "01",
-        "fromDate": "",
-        "toDate": "",
-        "placeFilter": "",
-        "municipalities": "",
-        "_": 1580986385084
+        "orderLineId": 2056029,
+        "lat": lat,
+        "lon": lon
     }
 
-    url = "https://siste.eiendomspriser.no/service/search"
-    url = url + "?" + encode_url_norwegian(params)
+    url = "https://profil2-api.nabolag.no/AddressSearch/compare"
 
-    r = requests.get(url, headers=headers)
+    r = requests.post(url, headers=headers, params=params)
 
-    return r.json()
+    return fix_json(r.json())
+
+
+def fix_json(data, path="neighborhood"):
+    if isinstance(data, dict) and 'location' in data:
+        del data['location']
+
+    output = {}
+
+    if isinstance(data, dict):
+        for key in data.keys():
+            output.update(fix_json(data[key], path + "_" + str(key)))
+    elif isinstance(data, list):
+        for i in range(len(data)):
+            if isinstance(data[i], dict) and ('group' in data[i].keys() or 'name' in data[i].keys()):
+                if 'group' in data[i].keys():
+                    output.update({(path + '_' + data[i]['group']).lower(): data[i]['percent']['B']})
+                elif 'name' in data[i].keys():
+                    output.update({(path + '_' + data[i]['name'].replace(' ', '_')).lower(): data[i]['score']['B']})
+            else:
+                output.update(fix_json(data[i], path + "_" + str(i)))
+    else:
+        return {path: data}
+    return output
+
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Invalid number of arguments.\n\nUsage:\n$ python finn.py "Adresse"')
+    if len(sys.argv) != 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+        print('Invalid number of arguments.\n\nUsage:\n$ python neighborhood.py "lat" "lon"')
         exit(1)
 
-    address = sys.argv[1]
-    data = scrape(address)
+    lat = float(sys.argv[1])
+    lon = float(sys.argv[2])
+    data = scrape(lat, lon)
     print(json.dumps(data, indent=2, ensure_ascii=False))

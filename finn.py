@@ -5,14 +5,10 @@ import sys
 import dateparser
 from fake_useragent import UserAgent
 from requests_html import HTMLSession
-from geopy.geocoders import Nominatim
-from geopy import distance
-import eiendomspriser
 
 session = HTMLSession()
 ua = UserAgent()
 
-geolocator = Nominatim(user_agent="finnpy")
 
 keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen', 'garasje', 'parkeringsplass', 'p-plass','car port','kar port'],
     ['fiber', 'fibernett', 'fibertilkobling', 'fiber-nett', 'fiber nett', 'fiber-tilkobling', 'fiber tilkobling'],
@@ -80,40 +76,9 @@ def _parse_data_lists(html):
             #Cleanup tomteareal
             if _key == 'Tomteareal':
                 _key = 'Tomteareal (eiet)'
-                data[_key] = int(_clean(a.text).split()[0])
+                data[_key] = int(str(_clean(a.text)).split()[0])
             else:
                 data[_key] = _clean(a.text)
-
-    return data
-
-
-def _get_geocode(address):
-    new_address = address.split(',')
-    new_new_address = ""
-    for s in new_address[0].split():
-        new_new_address += s
-        if s.isdigit():
-            break
-        new_new_address += " "
-
-    if len(new_address) == 2:
-        new_address = new_new_address + "," + new_address[1]
-
-    location = geolocator.geocode(new_address)
-    return location
-
-
-def _get_distance_to_city_center(location):
-    location2 = (63.4304324, 10.3946152) #Trondheim
-    return distance.geodesic((location.latitude, location.longitude), location2).km
-
-
-def _parse_geodata(address):
-    data = {}
-    location = _get_geocode(address)
-    data['latitude'] = location.latitude
-    data['longitude'] = location.longitude
-    data['distance_to_centrum'] = _get_distance_to_city_center(location)
 
     return data
 
@@ -150,7 +115,7 @@ def _str2num(text):
     return new_fees
 
 
-def _interpolate_data_(ad_data):
+def interpolate_data_(ad_data):
     if 'Totalpris' not in ad_data and 'Verditakst' in ad_data:
         ad_data['Totalpris'] = ad_data['Verditakst']
 
@@ -187,6 +152,11 @@ def _interpolate_data_(ad_data):
     if 'Omkostninger' not in ad_data:
         ad_data['Omkostninger'] = 0
 
+    if ad_data['Omkostninger'] > ad_data['Totalpris'] * 0.025:
+        ad_data['Omkostninger_uten_dokumentavgift'] = ad_data['Omkostninger'] - ad_data['Totalpris'] * 0.025
+    else:
+        ad_data['Omkostninger_uten_dokumentavgift'] = ad_data['Omkostninger']
+
     ad_data['Energikarakter'] = 0
     ad_data['Oppvarmingskarakter'] = 0
 
@@ -205,7 +175,7 @@ def _interpolate_data_(ad_data):
     return ad_data
 
 
-def _data_cleaner(ad_data):
+def data_cleaner(ad_data):
     remove = ['Tomteareal (eiet)', 'Bruttoareal', 'Formuesverdi', 'Verditakst', 'Tomt', 'Utleiedel', 'Renovert år', 'Låneverdi', 'Eierskifte-forsikring']
 
     for col in remove:
@@ -238,12 +208,6 @@ def scrape_ad(finnkode):
     #    ad_data['Totalpris'] = ad_data['Prisantydning']
 
     #ad_data['Prisantydning'] = _calc_price(ad_data)
-
-    sale = eiendomspriser.scrape(ad_data['Postadresse'])
-
-    if (len(sale['Properties']) > 0):
-        ad_data['lat'] = sale['Properties'][0]['Coordinate']['Lat']
-        ad_data['lon'] = sale['Properties'][0]['Coordinate']['Lon']
 
     return ad_data
 
