@@ -101,10 +101,18 @@ Function that returns 1-normalized income distribution for neighborhood through 
 Brackets are formatted as:
 [<0-100000>, <100000-200000>, <200000-400000>, <400000-500000>, <500000-800000>, <800000->]
 """
-def income_distribution(nabolag_html: requests_html.HTML) -> list:
+def income_distribution(nabolag_html: requests_html.HTML) -> dict:
     cards = nabolag_html.find(".BarChart-sc-1yklinr-0")
     bars = cards[1].find(".BarChart__BarWrapper-sc-1yklinr-1")
-    return one_normalized_list_from_html_graph(bars)
+    one_normalized_list = one_normalized_list_from_html_graph(bars)
+    return {
+        "neighborhood_income_0_100000" : distribution[0],
+        "neighborhood_income_100000_200000" : distribution[1],
+        "neighborhood_income_200000_400000" : distribution[2],
+        "neighborhood_income_400000_500000" : distribution[3],
+        "neighborhood_income_500000_800000" : distribution[4],
+        "neighborhood_income_800000+" : distribution[5]
+    }
 
 
 
@@ -116,10 +124,19 @@ One normalized age distribution of property neighborhood
 Formatted as:
 [<0-12>, <13-18>, <19-34>, <35-64>, <65+>]
 """
-def age_distribution(nabolag_HTML : requests_html.HTML) -> list:
+def age_distribution(nabolag_HTML : requests_html.HTML) -> dict:
     cards = nabolag_html.find(".BarChart-sc-1yklinr-0")
     bars = cards[0].find(".BarChart__BarWrapper-sc-1yklinr-1")
-    return one_normalized_list_from_html_graph(bars)
+    distribution =  one_normalized_list_from_html_graph(bars)
+
+    retun {
+        "neighborhood_age_0_12" : distribution[0],
+        "neighborhood_age_13_18" : distribution[1],
+        "neighborhood_age_19_34" : distribution[2],
+        "neighborhood_age_35_64" : distribution[3],
+        "neighborhood_age_65+" : distribution[4]
+    }
+
 
 
 
@@ -131,12 +148,17 @@ One normalized marital status distribrution of property neighborhood
 Formatted as:
 [<Not married>, <Married>, <Separated>, <Widow>]
 """
-def marital_status_distribution(nabolag_html: requests_html.HTML) -> list:
+def marital_status_distribution(nabolag_html: requests_html.HTML) -> dict:
     responsive_container = nabolag_html.find(".Legend__LegendValue-e29sxx-3")
     marital_status = []
     for el in responsive_container:
         marital_status.append(int(str(el.text).split("%")[0])/100)
-    print(marital_status)
+    return {
+        "Not_married" : marital_status[0],
+        "Married" : marital_status[1],
+        "Separated" : marital_status[2],
+        "Widow" : marital_status[3]
+    }
 
 
 
@@ -283,8 +305,13 @@ def housing_price_distribution(env_html: requests_html.HTML) -> list:
     for card in cards:
         if len(card.find("#housing_prices")) > 0:
             bars = card.find(".BarChart__BarWrapper-sc-1yklinr-1")
-            print(bars)
     return one_normalized_list_from_html_graph(bars)
+
+def neighborhood_profiler(finn_code: str) -> dict:
+    env_html = nabolag_env_html_render(finn_code)
+    family_html = nabolag_family_html(finn_code)
+    people_html = nabolag_people_html(finn_code)
+    transport_html = nabolag_transport_html(finn_code)
 
 
 
