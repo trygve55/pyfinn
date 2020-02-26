@@ -7,16 +7,30 @@ from fake_useragent import UserAgent
 from requests_html import HTMLSession
 from geopy.geocoders import Nominatim
 from geopy import distance
-import geocoder
+import eiendomspriser
 
 session = HTMLSession()
 ua = UserAgent()
 
 geolocator = Nominatim(user_agent="finnpy")
 
-keywords = ['utsikt',
-            'parkering',
-            'garasje']
+keywords =[['parkering', 'carport', 'karport', 'car-port', 'kar-port', 'garasjen', 'garasje', 'parkeringsplass', 'p-plass','car port','kar port'],
+    ['fiber', 'fibernett', 'fibertilkobling', 'fiber-nett', 'fiber nett', 'fiber-tilkobling', 'fiber tilkobling'],
+    ['kabel-tv', 'kabeltv', 'kabel tv'],
+    ['tg 0', 'tg0', 'tilstandsgrad 0', 'tg: 0', 'tg:0'],
+    ['tg 1', 'tg1', 'tilstandsgrad 1', 'tg: 1', 'tg:1'],
+    ['tg 2', 'tg2', 'tilstandsgrad 2', 'tg: 2', 'tg:2'],
+    ['vedovn', 'peis', 'vedfyring', 'ved ovn', 'ved fyring'],
+    ['varmepumpe', 'varme pumpe', 'varme-pumpe', 'air-condition', 'air condition'],
+    ['fjernvarme', 'fjern varme', 'fjern-varme', 'jord-varme', 'jordvarme', 'jord varme', 'grunnvarme', 'grunn varme', 'grunn-varme'],
+    ['terasse', 'terrasse', 'balkong', 'veranda', 'takterasse', 'takterrasse', 'markterrasse', 'markterasse'],
+    ['utsikt', 'panoramautsikt', 'sjøutsikt', 'havutsikt', 'fjordutsikt'],
+    ['kjøkkenøy', 'integrert hvitevarer', 'integrert kjøkken', 'hth', 'kvik'],
+    ['hage', 'plen'],
+    ['garderobe', 'walk-in', 'walk in', 'walkin'],
+    ['oppusset', 'renovert', 'totalrenovert', 'moderne', 'total-renovert','oppgradert'],
+    ['oppussingsobjekt', 'oppussingsprosjekt', 'oppussings prosjekt', 'oppussingsobjekt'],
+    ['bod', 'utebod', 'utehus', 'skur', 'vedskjul']]
 
 
 def _clean(text):
@@ -37,15 +51,17 @@ def _parse_neighbourhood_info(html):
 
 
 def _parse_keywords(html):
-    found_keywords = []
+    data = {}
     for el in html.find('div'):
         if 'data-owner' in el.attrs and el.attrs['data-owner'] == 'adView':
-            text = el.text
-            for i in keywords:
-                if i in text:
-                    found_keywords.append(i)
-
-    return found_keywords
+            text = el.text.lower()
+            for words in keywords:
+                data[words[0]] = False
+                for i in words:
+                    if i in text:
+                        data[words[0]] = True
+                        break
+    return data
 
 
 def _parse_data_lists(html):
@@ -125,6 +141,79 @@ def _calc_price(ad_data):
     return ad_data['Totalpris'] - debt - cost
 
 
+def _str2num(text):
+    new_text = ""
+    for f in text.split():
+        if f.isdigit():
+            new_text += f
+    new_fees = int(new_text)
+    return new_fees
+
+
+def _interpolate_data_(ad_data):
+    if 'Totalpris' not in ad_data and 'Verditakst' in ad_data:
+        ad_data['Totalpris'] = ad_data['Verditakst']
+
+    if 'Primærrom' not in ad_data and 'Bruksareal' in ad_data:
+        ad_data['Primærrom'] = ad_data['Bruksareal']
+
+    if 'Pris med fellesgjeld' in ad_data:
+        ad_data['Totalpris'] = ad_data['Pris med fellesgjeld']
+        del ad_data['Pris med fellesgjeld']
+
+    if not 'Felleskost/mnd.' in ad_data:
+        ad_data['Felleskost/mnd.'] = 0
+
+    if not 'Kommunale avg.' in ad_data:
+        ad_data['Kommunale avg.'] = 0
+    else:
+        ad_data['Kommunale avg.'] = _str2num(ad_data['Kommunale avg.'])
+
+    if 'Etasje' not in ad_data:
+        ad_data['Etasje'] = 1.0
+
+    if 'Soverom' in ad_data and isinstance(ad_data['Soverom'], int) and 'Rom' not in ad_data:
+        ad_data['Rom'] = ad_data['Soverom'] + 1
+
+    if 'Energimerking' not in ad_data:
+        ad_data['Energimerking'] = 'F - rød'
+
+    if 'Fellesgjeld' not in ad_data:
+        ad_data['Fellesgjeld'] = 0
+
+    if 'Fellesformue' not in ad_data:
+        ad_data['Fellesformue'] = 0
+
+    if 'Omkostninger' not in ad_data:
+        ad_data['Omkostninger'] = 0
+
+    ad_data['Energikarakter'] = 0
+    ad_data['Oppvarmingskarakter'] = 0
+
+    letters_list = ['a','b','c','d','e','f','g']
+    colors_list =['mørkegrønn','lysegrønn','gul','oransje','rød']
+
+    new_energy = ad_data['Energimerking'].split('-')
+    energy_rating = new_energy[0].strip()
+    ad_data['Energikarakter'] = letters_list.index(energy_rating.lower())
+    if len(new_energy) == 2:
+        heating_rating = new_energy[1].strip()
+        ad_data['Oppvarmingskarakter'] = colors_list.index(heating_rating.lower())
+    else:
+        ad_data['Oppvarmingskarakter'] = 4
+
+    return ad_data
+
+
+def _data_cleaner(ad_data):
+    remove = ['Tomteareal (eiet)', 'Bruttoareal', 'Formuesverdi', 'Verditakst', 'Tomt', 'Utleiedel', 'Renovert år', 'Låneverdi', 'Eierskifte-forsikring']
+
+    for col in remove:
+        if col in ad_data:
+            del ad_data[col]
+
+    return ad_data
+
 def scrape_ad(finnkode):
     url = 'https://www.finn.no/realestate/homes/ad.html?finnkode={code}'.format(code=finnkode)
     r = session.get(url, headers={'user-agent': ua.random})
@@ -143,11 +232,18 @@ def scrape_ad(finnkode):
     }
 
     ad_data.update(_parse_data_lists(html))
-    ad_data.update(_parse_geodata(ad_data['Postadresse']))
-    print(_parse_keywords(html))
-    #print(_parse_neighbourhood_info(html))
+    ad_data.update(_parse_keywords(html))
 
-    ad_data['Prisantydning'] = _calc_price(ad_data)
+    #if 'Prisantydning' in ad_data:
+    #    ad_data['Totalpris'] = ad_data['Prisantydning']
+
+    #ad_data['Prisantydning'] = _calc_price(ad_data)
+
+    sale = eiendomspriser.scrape(ad_data['Postadresse'])
+
+    if (len(sale['Properties']) > 0):
+        ad_data['lat'] = sale['Properties'][0]['Coordinate']['Lat']
+        ad_data['lon'] = sale['Properties'][0]['Coordinate']['Lon']
 
     return ad_data
 
