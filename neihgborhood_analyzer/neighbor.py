@@ -170,7 +170,7 @@ One normalized house age distribution of property neighborhood
 Formatted as:
 [<0 - 10 yrs>, <10 - 30 yrs>, <30 - 50yrs>, <more than 50yrs>]
 """
-def house_age_distribution(env_html: requests_html.HTML) -> list:
+def house_age_distribution(env_html: requests_html.HTML) -> dict:
     ages = []
     cards = env_html.find(".Card__Wrapper-q6bwfy-0")
     for card in cards:
@@ -178,7 +178,12 @@ def house_age_distribution(env_html: requests_html.HTML) -> list:
             ages = []
             for el in card.find(".Legend__LegendValue-e29sxx-3"):
                 ages.append(int(str(el.text).split("%")[0])/100)
-    return ages
+    return {
+        "neighborhood_ages_0_10yr" : ages[0],
+        "neighborhood_ages_10_30yr" : ages[1],
+        "neighborhood_ages_30_50yr" : ages[2],
+        "neighborhood_ages_50+yrs" : ages[3]
+    }
 
 """
 Args:
@@ -188,7 +193,7 @@ One normalized housing type of property neighborhood
 Formatted as:
 [<Mansion>, <Rowhouse>, <Appartment in block>, <Others>]
 """
-def housing_type(env_html: requests_html.HTML) -> list:
+def housing_type(env_html: requests_html.HTML) -> dict:
     types = []
     cards = env_html.find(".Card__Wrapper-q6bwfy-0")
     for card in cards:
@@ -196,7 +201,12 @@ def housing_type(env_html: requests_html.HTML) -> list:
             for el in card.find(".PieChart__SmallLabel-oxga1c-7"):
                 if "%" in str(el.text):
                     types.append(int(str(el.text).split("%")[0])/100)
-    return types
+    return {
+        "Neighborhood_Mansion_rate" : types[0]
+        "Neighborhood_Rowhouse_rate" : types[1]
+        "Neighborhood_block_appartment_rate" : types[2]
+        "Neighborhood_Others_rate" : types[3]
+    }
 
 """
 Args:
@@ -222,12 +232,18 @@ One normalized polling data of neighborhood variables
 Formatted as:
 [<Safety>, <Noise>, <Friendly neighbors>, <Nice gardens>, <Great roads>]
 """
-def polling_env_variables(env_html: requests_html.HTML) -> list:
+def polling_env_variables(env_html: requests_html.HTML) -> dict:
     poll_data = []
     ratings = env_html.find(".Rating__RatingHeader-ys2jkg-3")
     for rating in ratings:
         poll_data.append(int(str(rating.text).split(" ")[0])/100)
-    return poll_data
+    return {
+        "Neihgborhood_safety_rating" : poll_data[0],
+        "Neihgborhood_noise_rating" : poll_data[1],
+        "Neihgborhood_friendly_neighboors_rating" : poll_data[2],
+        "Neihgborhood_nice_gardens_rating" : poll_data[3],
+        "Neihgborhood_roads_rating" : poll_data[4]
+    }
 
 
 
@@ -239,7 +255,7 @@ One normalized list of housing size in property neighborhood
 Formatted as:
 [<0 - 60m²>, <60 - 120m²>, <120m² - 200m²>, <Over 200m²>]
 """
-def housing_size(env_html: requests_html.HTML) -> list:
+def housing_size(env_html: requests_html.HTML) -> dict:
     size_list = []
     cards = env_html.find(".Card__Wrapper-q6bwfy-0")
     for card in cards:
@@ -247,7 +263,12 @@ def housing_size(env_html: requests_html.HTML) -> list:
             for el in card.find(".Legend__LegendValue-e29sxx-3"):
                 if "%" in str(el.text):
                     size_list.append(int(str(el.text).split("%")[0])/100)
-    return size_list
+    return {
+        "Neighborhood_house_size_0m_60m" : size_list[0]
+        "Neighborhood_house_size_60m_120m" : size_list[1]
+        "Neighborhood_house_size_120m_200m" : size_list[2]
+        "Neighborhood_house_size_over200m" : size_list[3]
+    }
 
 
 """
@@ -299,13 +320,21 @@ One normalized list of housing size in property neighborhood
 Formatted as:
 [<0 - 2M>, <2M - 3M>, <3M - 4M>, <4M - 5M>, <5M - 6M>, <6M+>]
 """
-def housing_price_distribution(env_html: requests_html.HTML) -> list:
+def housing_price_distribution(env_html: requests_html.HTML) -> dict:
     cards = env_html.find(".Card__Wrapper-q6bwfy-0")
     bars = []
     for card in cards:
         if len(card.find("#housing_prices")) > 0:
             bars = card.find(".BarChart__BarWrapper-sc-1yklinr-1")
-    return one_normalized_list_from_html_graph(bars)
+    one_normalized_list = one_normalized_list_from_html_graph(bars)
+    return {
+        "neighborhood_housing_prices_0M_2M" : one_normalized_list[0]
+        "neighborhood_housing_prices_2M_3M" : one_normalized_list[1]
+        "neighborhood_housing_prices_3M_4M" : one_normalized_list[2]
+        "neighborhood_housing_prices_4M_5M" : one_normalized_list[3]
+        "neighborhood_housing_prices_5M_6M" : one_normalized_list[4]
+        "neighborhood_housing_prices_6M+" : one_normalized_list[5]
+    }
 
 def neighborhood_profiler(finn_code: str) -> dict:
     env_html = nabolag_env_html_render(finn_code)
