@@ -106,12 +106,12 @@ def income_distribution(nabolag_html: requests_html.HTML) -> dict:
     bars = cards[1].find(".BarChart__BarWrapper-sc-1yklinr-1")
     one_normalized_list = one_normalized_list_from_html_graph(bars)
     return {
-        "neighborhood_income_0_100000" : distribution[0],
-        "neighborhood_income_100000_200000" : distribution[1],
-        "neighborhood_income_200000_400000" : distribution[2],
-        "neighborhood_income_400000_500000" : distribution[3],
-        "neighborhood_income_500000_800000" : distribution[4],
-        "neighborhood_income_800000+" : distribution[5]
+        "neighborhood_income_0_100000" : one_normalized_list[0],
+        "neighborhood_income_100000_200000" : one_normalized_list[1],
+        "neighborhood_income_200000_400000" : one_normalized_list[2],
+        "neighborhood_income_400000_500000" : one_normalized_list[3],
+        "neighborhood_income_500000_800000" : one_normalized_list[4],
+        "neighborhood_income_800000+" : one_normalized_list[5]
     }
 
 
@@ -124,12 +124,12 @@ One normalized age distribution of property neighborhood
 Formatted as:
 [<0-12>, <13-18>, <19-34>, <35-64>, <65+>]
 """
-def age_distribution(nabolag_HTML : requests_html.HTML) -> dict:
+def age_distribution(nabolag_html : requests_html.HTML) -> dict:
     cards = nabolag_html.find(".BarChart-sc-1yklinr-0")
     bars = cards[0].find(".BarChart__BarWrapper-sc-1yklinr-1")
     distribution =  one_normalized_list_from_html_graph(bars)
 
-    retun {
+    return {
         "neighborhood_age_0_12" : distribution[0],
         "neighborhood_age_13_18" : distribution[1],
         "neighborhood_age_19_34" : distribution[2],
@@ -202,9 +202,9 @@ def housing_type(env_html: requests_html.HTML) -> dict:
                 if "%" in str(el.text):
                     types.append(int(str(el.text).split("%")[0])/100)
     return {
-        "Neighborhood_Mansion_rate" : types[0]
-        "Neighborhood_Rowhouse_rate" : types[1]
-        "Neighborhood_block_appartment_rate" : types[2]
+        "Neighborhood_Mansion_rate" : types[0],
+        "Neighborhood_Rowhouse_rate" : types[1],
+        "Neighborhood_block_appartment_rate" : types[2],
         "Neighborhood_Others_rate" : types[3]
     }
 
@@ -233,17 +233,44 @@ Formatted as:
 [<Safety>, <Noise>, <Friendly neighbors>, <Nice gardens>, <Great roads>]
 """
 def polling_env_variables(env_html: requests_html.HTML) -> dict:
-    poll_data = []
-    ratings = env_html.find(".Rating__RatingHeader-ys2jkg-3")
-    for rating in ratings:
-        poll_data.append(int(str(rating.text).split(" ")[0])/100)
-    return {
-        "Neihgborhood_safety_rating" : poll_data[0],
-        "Neihgborhood_noise_rating" : poll_data[1],
-        "Neihgborhood_friendly_neighboors_rating" : poll_data[2],
-        "Neihgborhood_nice_gardens_rating" : poll_data[3],
-        "Neihgborhood_roads_rating" : poll_data[4]
-    }
+    data = {}
+    cards = env_html.find(".Card__Wrapper-q6bwfy-0")
+    for card in cards:
+        #Piechart
+        card_name = card.find('div', first=True).find('h4', first=True).text
+        print(card_name)
+        for el in card.find('.PieChart__TableRow-oxga1c-5'):
+            sub_el = el.find('td')
+            value = float(sub_el[0].text.replace('%', '')) / 100
+            var_name = sub_el[1].text.replace('/', '')
+            data['neighborhood_' + card_name + '_' + var_name] = value
+
+        #Value percent
+        h4_text = card.find('.Rating__RatingHeader-ys2jkg-3', first=True)
+        if h4_text != None:
+            data['neighborhood_' + card_name] = float(h4_text.text.split(' ')[0]) / 100
+
+        #price
+        barchart = card.find('.BarChart-sc-1yklinr-0', first=True)
+        if barchart:
+            max_percent = float(barchart.find('.BarChart__LabelValue-sc-1yklinr-5')[1].text.replace('%', '')) / 100
+            for bar in barchart.find('.BarChart__BarWrapper-sc-1yklinr-1'):
+                bar_name = bar.find('span', first=True).text.replace(' ', '')
+                print(bar_name)
+                value = float(bar.find('.BarChart__Bar-sc-1yklinr-2', first=True).attrs['style'].split(':')[1].replace('%', '')) / 100 * max_percent
+                data['neighborhood_' + card_name + '_' + bar_name] = value
+
+        #piechart2
+        chart = card.find('.PieChartComparison__Wrapper-sc-1ik4tkv-0', first=True)
+        if chart:
+            for el in chart.find('.Legend__LegendValue-e29sxx-3'):
+                text = el.text.split(' ')
+                value_name = text[1]
+                value = float(text[0].replace('%', '')) / 100
+                data['neighborhood_' + card_name + '_' + value_name] = value
+
+    print(data)
+    return data
 
 
 
@@ -264,9 +291,9 @@ def housing_size(env_html: requests_html.HTML) -> dict:
                 if "%" in str(el.text):
                     size_list.append(int(str(el.text).split("%")[0])/100)
     return {
-        "Neighborhood_house_size_0m_60m" : size_list[0]
-        "Neighborhood_house_size_60m_120m" : size_list[1]
-        "Neighborhood_house_size_120m_200m" : size_list[2]
+        "Neighborhood_house_size_0m_60m" : size_list[0],
+        "Neighborhood_house_size_60m_120m" : size_list[1],
+        "Neighborhood_house_size_120m_200m" : size_list[2],
         "Neighborhood_house_size_over200m" : size_list[3]
     }
 
@@ -328,19 +355,25 @@ def housing_price_distribution(env_html: requests_html.HTML) -> dict:
             bars = card.find(".BarChart__BarWrapper-sc-1yklinr-1")
     one_normalized_list = one_normalized_list_from_html_graph(bars)
     return {
-        "neighborhood_housing_prices_0M_2M" : one_normalized_list[0]
-        "neighborhood_housing_prices_2M_3M" : one_normalized_list[1]
-        "neighborhood_housing_prices_3M_4M" : one_normalized_list[2]
-        "neighborhood_housing_prices_4M_5M" : one_normalized_list[3]
-        "neighborhood_housing_prices_5M_6M" : one_normalized_list[4]
+        "neighborhood_housing_prices_0M_2M" : one_normalized_list[0],
+        "neighborhood_housing_prices_2M_3M" : one_normalized_list[1],
+        "neighborhood_housing_prices_3M_4M" : one_normalized_list[2],
+        "neighborhood_housing_prices_4M_5M" : one_normalized_list[3],
+        "neighborhood_housing_prices_5M_6M" : one_normalized_list[4],
         "neighborhood_housing_prices_6M+" : one_normalized_list[5]
     }
 
 def neighborhood_profiler(finn_code: str) -> dict:
-    env_html = nabolag_env_html_render(finn_code)
-    family_html = nabolag_family_html(finn_code)
-    people_html = nabolag_people_html(finn_code)
-    transport_html = nabolag_transport_html(finn_code)
+    env_html = family_html = people_html = transport_html = None
+
+    try:
+        env_html = nabolag_env_html_render(finn_code)
+        family_html = nabolag_family_html(finn_code)
+        people_html = nabolag_people_html_render(finn_code)
+        transport_html = nabolag_transport_html(finn_code)
+    except Exception as e:
+        print(str(e))
+        return None
 
     data = {}
 
@@ -364,7 +397,5 @@ def neighborhood_profiler(finn_code: str) -> dict:
 
 #test if run by main.
 if __name__ == "__main__":
-    test_code = "147637977"
-    env_html = nabolag_env_html_render(test_code)
-    print(env_html.find(".Card__Wrapper-q6bwfy-0"))
-    print(housing_price_distribution(env_html))
+    test_code = "155458816"
+    print(neighborhood_profiler(test_code))
