@@ -24,7 +24,7 @@ def scrape(address):
     }
 
     params = {
-        "query": "grøavegen 16",
+        "query": address,
         "sort": "01",
         "fromDate": "",
         "toDate": "",
@@ -46,5 +46,5 @@ if __name__ == '__main__':
         exit(1)
 
     address = sys.argv[1]
-    data = scrape_price(address)
+    data = scrape(address)
     print(json.dumps(data, indent=2, ensure_ascii=False))
