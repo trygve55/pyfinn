@@ -116,6 +116,20 @@ def _parse_geodata(address):
 
     return data
 
+def _get_geocode(address):
+    new_address = address.split(',')
+    new_new_address = ""
+    for s in new_address[0].split():
+        new_new_address += s
+        if s.isdigit():
+            break
+        new_new_address += " "
+
+    if len(new_address) == 2:
+        new_address = new_new_address + "," + new_address[1]
+
+    location = geolocator.geocode(new_address)
+    return location
 
 def _scrape_viewings(html):
     viewings = set()
