@@ -15,7 +15,7 @@ import neighborhood
 import eiendomspriser
 
 if __name__ == '__main__':
-    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=2000")
+    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1000")
 
     #set up list as shared
     manager = Manager()
@@ -84,8 +84,7 @@ if __name__ == '__main__':
 
     df = df.loc[:, df.isnull().mean() < .9]
 
-    np.save("bad_codes.npy", np.array(bad_codes))
-
+    np.save("bad_codes.npy", np.concatenate((np.array(bad_codes),old_bad_codes)))
     #rare
     #df = df.dropna(axis=1)
     if path.exists("test.csv"):
