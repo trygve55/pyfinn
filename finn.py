@@ -182,6 +182,8 @@ def data_cleaner(ad_data):
         if col in ad_data:
             del ad_data[col]
 
+    ad_data['Postadresse'] = ad_data['Postadresse'].replace('"', '')
+
     return ad_data
 
 def scrape_ad(finnkode):

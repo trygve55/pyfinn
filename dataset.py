@@ -12,7 +12,7 @@ import neighborhood
 import eiendomspriser
 
 if __name__ == '__main__':
-    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=3000")
+    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=300000")
 
     #set up list as shared
     manager = Manager()
@@ -25,7 +25,7 @@ if __name__ == '__main__':
                 tries_left -= 1
                 ad_data = finn.scrape_ad(finn_code)
 
-                if 'Totalpris' not in ad_data and 'Verditakst' not in ad_data:
+                if ad_data and 'Totalpris' not in ad_data and 'Verditakst' not in ad_data:
                     return
 
                 ad_data = finn.interpolate_data_(ad_data)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
                 traceback.print_tb(e.__traceback__)
                 time.sleep(2)
 
-    r = process_map(scrape_and_process, finn_codes, max_workers=12)
+    r = process_map(scrape_and_process, finn_codes, max_workers=32)
 
     df = pd.DataFrame(list(ads))
 
