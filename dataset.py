@@ -15,19 +15,18 @@ import neighborhood
 import eiendomspriser
 
 if __name__ == '__main__':
-    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=300000")
+    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1000")
 
     #set up list as shared
     manager = Manager()
     ads = manager.list()
     old_codes = []
-    
+
     if path.exists("test.csv"):
         old_df = pd.read_csv("test.csv")
         for url in list(old_df['url']):
             old_codes.append(url.split('=')[1])
         finn_codes = list(set(finn_codes) - set(old_codes))
-
 
     def scrape_and_process(finn_code):
         tries_left = 3
@@ -55,7 +54,7 @@ if __name__ == '__main__':
                 ad_data.update(neighborhood.scrape(ad_data['lat'], ad_data['lon']))
 
                 #Ignore unbuilt listings
-                if 'Byggeår' in ad_data:
+                if 'Byggeår' in ad_data and 'Totalpris' in ad_data:
                     ads.append(ad_data)
                 break
             except Exception as e:
@@ -63,22 +62,21 @@ if __name__ == '__main__':
                 traceback.print_tb(e.__traceback__)
                 time.sleep(2)
 
+    #kommenter inn denne for å kjøre prosessen parallellt (fungerer kun på linux?)
     r = process_map(scrape_and_process, finn_codes, max_workers=32)
+    
+    #kommenter inn denne for å kjøre prosessen singulært (fungerer på windows og linux)
+    #for code in tqdm(finn_codes):
+    #    scrape_and_process(code)
 
     df = pd.DataFrame(list(ads))
-
-    #soverom
-    df['Soverom'] = pd.to_numeric(df['Soverom'])
-    df = df[df['Soverom'].notna()]
-
-    #pris
-    df['Totalpris'].replace('  ', np.nan, inplace=True)
-    df = df.dropna(subset=['Totalpris'])
 
     df = df.loc[:, df.isnull().mean() < .9]
 
     #rare
     #df = df.dropna(axis=1)
+    if path.exists("test.csv"):
+        df = pd.concat([old_df,df],ignore_index=True)
     df.to_csv(r'test.csv', index=False)
 
     print("Saved CSV file to test.csv")
