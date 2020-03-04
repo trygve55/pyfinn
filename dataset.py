@@ -4,6 +4,9 @@ import time
 import numpy as np
 from multiprocessing import Manager
 import traceback
+from tqdm import tqdm
+import os.path
+from os import path
 
 import geocode
 import finncode
@@ -17,6 +20,14 @@ if __name__ == '__main__':
     #set up list as shared
     manager = Manager()
     ads = manager.list()
+    old_codes = []
+    
+    if path.exists("test.csv"):
+        old_df = pd.read_csv("test.csv")
+        for url in list(old_df['url']):
+            old_codes.append(url.split('=')[1])
+        finn_codes = list(set(finn_codes) - set(old_codes))
+
 
     def scrape_and_process(finn_code):
         tries_left = 3
