@@ -15,7 +15,7 @@ import neighborhood
 import eiendomspriser
 
 if __name__ == '__main__':
-    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1000")
+    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=10000")
 
     #set up list as shared
     manager = Manager()
@@ -82,7 +82,13 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(list(ads))
 
-    df = df.loc[:, df.isnull().mean() < .9]
+
+    thresh = len(df) * .9
+    df.dropna(thresh=thresh, axis=1, inplace=True)
+
+    for col in df.columns:
+        if np.issubdtype(df[col].dtype, np.number):
+            df[col].fillna((df[col].mean()), inplace=True)
 
     df.columns = [col.lower().replace(' ', '_').replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa') for col in df.columns]
 
