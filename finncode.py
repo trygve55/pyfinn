@@ -12,7 +12,7 @@ def _parse_data_lists(html:HTMLSession):
     finn_codes = []
     data_lists = html.find('article')
     for el in data_lists:
-        finn_codes.append(el.find('a')[0].attrs["id"].split("-")[-1])
+        finn_codes.append(el.find('a')[0].attrs["href"].split("=")[-1])
     return finn_codes
 
 
