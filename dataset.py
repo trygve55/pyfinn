@@ -84,6 +84,8 @@ if __name__ == '__main__':
 
     df = df.loc[:, df.isnull().mean() < .9]
 
+    df.columns = [col.lower().replace(' ', '_').replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa') for col in df.columns]
+
     np.save("bad_codes.npy", np.concatenate((np.array(bad_codes),old_bad_codes)))
     #rare
     #df = df.dropna(axis=1)
