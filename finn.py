@@ -116,6 +116,9 @@ def _str2num(text):
 
 
 def interpolate_data_(ad_data):
+
+    ad_data['Postnummer'] = ad_data['Postadresse'].split(',')[-1].strip().split(' ')[0]
+
     if 'Totalpris' not in ad_data and 'Verditakst' in ad_data:
         ad_data['Totalpris'] = ad_data['Verditakst']
 
