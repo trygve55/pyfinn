@@ -122,6 +122,9 @@ def interpolate_data_(ad_data):
     if 'Primærrom' not in ad_data and 'Bruksareal' in ad_data:
         ad_data['Primærrom'] = ad_data['Bruksareal']
 
+    if 'Primærrom' in ad_data and 'Bruksareal' not in ad_data:
+        ad_data['Bruksareal'] = ad_data['Primærrom']
+
     if 'Pris med fellesgjeld' in ad_data:
         ad_data['Totalpris'] = ad_data['Pris med fellesgjeld']
         del ad_data['Pris med fellesgjeld']
@@ -136,6 +139,9 @@ def interpolate_data_(ad_data):
 
     if 'Etasje' not in ad_data:
         ad_data['Etasje'] = 1.0
+
+    if 'Soverom' not in ad_data:
+        ad_data['Soverom'] = 1
 
     if 'Soverom' in ad_data and isinstance(ad_data['Soverom'], int) and 'Rom' not in ad_data:
         ad_data['Rom'] = ad_data['Soverom'] + 1
