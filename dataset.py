@@ -13,9 +13,10 @@ import finncode
 import finn
 import neighborhood
 import eiendomspriser
+from zip import zip_price_estimate
 
 if __name__ == '__main__':
-    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=10000")
+    finn_codes = finncode.scrape_category("https://www.finn.no/realestate/homes/search.html?filters=&location=0.20061&location=0.22030&location=1.22030.20046&location=1.22030.20045&location=1.22030.22105&location=1.22030.20052")
 
     #set up list as shared
     manager = Manager()
@@ -48,7 +49,9 @@ if __name__ == '__main__':
 
                 ad_data = finn.interpolate_data_(ad_data)
                 ad_data = finn.data_cleaner(ad_data)
-
+                print(ad_data['Bruksareal'])
+                print(ad_data['Postnummer'])
+                ad_data['zip_price_estimate'] = zip_price_estimate(int(ad_data['Bruksareal']), str(ad_data['Postnummer']))
                 #eiendomspriser
                 processed_address = ad_data['Postadresse'].split(',')[0].split('-')[0].split('/')[0]
                 sale = eiendomspriser.scrape(processed_address)
