@@ -32,6 +32,9 @@ def scrape_category(search_URL:str, show_progress=False):
         if len(temp_codes) <= 1:
             break
         finn_codes.extend(temp_codes)
+
+    if show_progress:
+        print('\n')
     return list(set(finn_codes))
 
 

@@ -5,7 +5,8 @@ import numpy as np
 from multiprocessing import Manager
 import traceback
 import sys
-from os import path
+import os
+from tqdm import tqdm
 
 import geocode
 import finncode
@@ -15,9 +16,13 @@ import eiendomspriser
 from zip import zip_price_estimate
 
 
+def is_windows():
+    return os.name == 'nt'
+
+
 def make_dataset(finn_search_url, outfile):
 
-    print('Fetching Finn-codes...')
+    print('\nFetching Finn-codes...')
     finn_codes = finncode.scrape_category(finn_search_url, show_progress=True)
 
     # set up list as shared
@@ -29,16 +34,16 @@ def make_dataset(finn_search_url, outfile):
     old_bad_codes = np.asarray([])
     old_df = None
 
-    if path.exists("test.csv"):
+    if os.path.exists("test.csv"):
         old_df = pd.read_csv("test.csv")
         for url in list(old_df['url']):
             old_codes.append(url.split('=')[1])
         finn_codes = list(set(finn_codes) - set(old_codes))
 
-    if path.exists("bad_codes.npy"):
+    if os.path.exists("bad_codes.npy"):
         old_bad_codes = np.load("bad_codes.npy")
 
-    finn_codes = list(set(finn_codes) - set(old_bad_codes))  # Removing duplicates
+    finn_codes = list(set(finn_codes) - set(old_bad_codes))
 
     def scrape_and_process(finn_code):
         tries_left = 3
@@ -77,14 +82,16 @@ def make_dataset(finn_search_url, outfile):
                 print('error on', finn_code)
                 traceback.print_tb(e.__traceback__)
                 bad_codes.append(finn_code)
-                time.sleep(2)
+                time.sleep(1)
 
-    # kommenter inn denne for å kjøre prosessen parallellt (fungerer kun på linux?)
-    r = process_map(scrape_and_process, finn_codes, max_workers=32)
-
-    # kommenter inn denne for å kjøre prosessen singulært (fungerer på windows og linux)
-    # for code in tqdm(finn_codes):
-    #    scrape_and_process(code)
+    print('Fetching ads...')
+    if is_windows():
+        # kommenter inn denne for å kjøre prosessen singulært (fungerer på windows og linux)
+        for code in tqdm(finn_codes):
+            scrape_and_process(code)
+    else:
+        # kommenter inn denne for å kjøre prosessen parallellt (fungerer kun på linux?)
+        r = process_map(scrape_and_process, finn_codes, max_workers=32)
 
     df = pd.DataFrame(list(ads))
 
@@ -107,12 +114,14 @@ def make_dataset(finn_search_url, outfile):
     # df = df.dropna(axis=1)
     if old_df is not None:
         df = pd.concat([old_df, df], ignore_index=True)
-    df.to_csv(r'test.csv', index=False)
+    df.to_csv(outfile, index=False)
 
 
 if __name__ == '__main__':
     if not (len(sys.argv) == 2 or len(sys.argv) == 3):
-        print('Invalid number of arguments.\n\nUsage:\n$ python dataset.py finn_search_url [output-file.csv]')
+        print('Invalid number of arguments.\n\nUsage:\n$ python dataset.py finn_search_url [output-file.csv]\n',
+              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200"\n'
+              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200" finn_dataset.csv\n')
         exit(1)
 
     finn_search_url = sys.argv[1]
@@ -123,4 +132,4 @@ if __name__ == '__main__':
 
     make_dataset(finn_search_url, output_file)
 
-    print("Saved CSV file to test.csv")
+    print("Saved CSV file to", output_file)
