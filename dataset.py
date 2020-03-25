@@ -20,7 +20,18 @@ def is_windows():
     return os.name == 'nt'
 
 
-def make_dataset(finn_search_url, outfile):
+if __name__ == '__main__':
+    if not (len(sys.argv) == 2 or len(sys.argv) == 3):
+        print('Invalid number of arguments.\n\nUsage:\n$ python dataset.py finn_search_url [output-file.csv]\n',
+              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200"\n'
+              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200" finn_dataset.csv\n')
+        exit(1)
+
+    finn_search_url = sys.argv[1]
+
+    output_file = '../finn_dataset.csv'
+    if len(sys.argv) == 3:
+        output_file = sys.argv[2]
 
     print('\nFetching Finn-codes...')
     finn_codes = finncode.scrape_category(finn_search_url, show_progress=True)
@@ -34,8 +45,8 @@ def make_dataset(finn_search_url, outfile):
     old_bad_codes = np.asarray([])
     old_df = None
 
-    if os.path.exists("test.csv"):
-        old_df = pd.read_csv("test.csv")
+    if os.path.exists(output_file):
+        old_df = pd.read_csv(output_file)
         for url in list(old_df['url']):
             old_codes.append(url.split('=')[1])
         finn_codes = list(set(finn_codes) - set(old_codes))
@@ -46,7 +57,7 @@ def make_dataset(finn_search_url, outfile):
     finn_codes = list(set(finn_codes) - set(old_bad_codes))
 
     def scrape_and_process(finn_code):
-        tries_left = 3
+        tries_left = 10
         while tries_left:
             try:
                 tries_left -= 1
@@ -58,6 +69,8 @@ def make_dataset(finn_search_url, outfile):
 
                 ad_data = finn.interpolate_data_(ad_data)
                 ad_data = finn.data_cleaner(ad_data)
+
+                # Get average square meter price for this zip code
                 ad_data['zip_price_estimate'] = zip_price_estimate(int(ad_data['Bruksareal']),
                                                                    str(ad_data['Postnummer']))
                 # eiendomspriser
@@ -78,15 +91,19 @@ def make_dataset(finn_search_url, outfile):
                 else:
                     bad_codes.append(finn_code)
                 break
+            except ConnectionError as e:
+                time.sleep(2)
+
             except Exception as e:
                 print('error on', finn_code)
                 traceback.print_tb(e.__traceback__)
                 bad_codes.append(finn_code)
-                time.sleep(1)
+                break
 
     print('Fetching ads...')
     if is_windows():
         # kommenter inn denne for å kjøre prosessen singulært (fungerer på windows og linux)
+        print('Running Windows compatible version. This program runs faster on Linux or Linux subsystem for Windows.')
         for code in tqdm(finn_codes):
             scrape_and_process(code)
     else:
@@ -114,22 +131,6 @@ def make_dataset(finn_search_url, outfile):
     # df = df.dropna(axis=1)
     if old_df is not None:
         df = pd.concat([old_df, df], ignore_index=True)
-    df.to_csv(outfile, index=False)
-
-
-if __name__ == '__main__':
-    if not (len(sys.argv) == 2 or len(sys.argv) == 3):
-        print('Invalid number of arguments.\n\nUsage:\n$ python dataset.py finn_search_url [output-file.csv]\n',
-              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200"\n'
-              'Example: python dataset.py "https://www.finn.no/realestate/homes/search.html?filters=&geoLocationName=Trondheim&lat=63.42128&lon=10.42544&radius=1200" finn_dataset.csv\n')
-        exit(1)
-
-    finn_search_url = sys.argv[1]
-
-    output_file = '../finn_dataset.csv'
-    if len(sys.argv) == 3:
-        output_file = sys.argv[2]
-
-    make_dataset(finn_search_url, output_file)
+    df.to_csv(output_file, index=False)
 
     print("Saved CSV file to", output_file)
