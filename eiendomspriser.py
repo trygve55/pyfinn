@@ -3,6 +3,7 @@ import urllib.parse
 import sys
 import json
 
+
 def encode_url_norwegian(params):
         return urllib.parse.urlencode(params)
 

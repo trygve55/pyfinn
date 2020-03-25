@@ -33,7 +33,7 @@ if __name__ == '__main__':
     if path.exists("bad_codes.npy"):
         old_bad_codes = np.load("bad_codes.npy")
     
-    finn_codes = list(set(finn_codes) - set(old_bad_codes))
+    finn_codes = list(set(finn_codes) - set(old_bad_codes)) #Removing duplicates
 
     def scrape_and_process(finn_code):
         tries_left = 3
@@ -82,14 +82,16 @@ if __name__ == '__main__':
 
     df = pd.DataFrame(list(ads))
 
-
+    #Removing columns with few values
     thresh = len(df) * .9
     df.dropna(thresh=thresh, axis=1, inplace=True)
 
+    #Filling missing values
     for col in df.columns:
         if np.issubdtype(df[col].dtype, np.number):
             df[col].fillna((df[col].mean()), inplace=True)
 
+    #To camelcase and remove æøå
     df.columns = [col.lower().replace(' ', '_').replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa') for col in df.columns]
 
     np.save("bad_codes.npy", np.concatenate((np.array(bad_codes),old_bad_codes)))
