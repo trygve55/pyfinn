@@ -16,10 +16,13 @@ def _parse_data_lists(html:HTMLSession):
     return finn_codes
 
 
-def scrape_category(search_URL:str):
+def scrape_category(search_URL:str, show_progress=False):
     page = 1
     finn_codes = []
     while True:
+        if show_progress:
+            print('Processing search page ' + str(page) + ', found ' + str(len(finn_codes)) + ' Finn-codes.', end='\r')
+
         url = search_URL + "&page=" + str(page)
         page += 1
         r = session.get(url, headers={'user-agent': ua.random})
